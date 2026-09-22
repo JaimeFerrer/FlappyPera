@@ -133,6 +133,32 @@
 
   function drawRankingBlock(startY) {
     if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+
+    const rows = rankingEntries.length === 0 ? 1 : Math.min(5, rankingEntries.length);
+    const lines = [];
+    if (rankingEntries.length === 0) {
+      lines.push(rankingLoading ? "Cargando..." : "¡Sé el primero!");
+    } else {
+      rankingEntries.slice(0, 5).forEach((entry, i) => {
+        let displayName = String(entry.name || "?");
+        if (displayName.length > 12) displayName = displayName.slice(0, 12) + "…";
+        lines.push(`${i + 1}. ${displayName} — ${entry.score}`);
+      });
+    }
+
+    // Dark translucent card behind the block so it stands out from the busy background.
+    ctx.save();
+    ctx.font = "600 13px 'Anton', sans-serif";
+    let maxTextW = ctx.measureText("🏆 RANKING").width;
+    for (const line of lines) maxTextW = Math.max(maxTextW, ctx.measureText(line).width);
+    const boxW = Math.min(W - 40, maxTextW + 44);
+    const boxTop = startY - 22;
+    const boxH = 26 + 18 * (rows - 1) + 46;
+    ctx.fillStyle = "rgba(5,7,10,0.62)";
+    roundRectPath(W / 2 - boxW / 2, boxTop, boxW, boxH, 12);
+    ctx.fill();
+    ctx.restore();
+
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "700 15px 'Anton', sans-serif";
@@ -143,26 +169,14 @@
     ctx.fillText("🏆 RANKING", W / 2, startY);
 
     ctx.font = "600 13px 'Anton', sans-serif";
-    if (rankingEntries.length === 0) {
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#000";
-      ctx.fillStyle = "#fff";
-      const msg = rankingLoading ? "Cargando..." : "¡Sé el primero!";
-      ctx.strokeText(msg, W / 2, startY + 26);
-      ctx.fillText(msg, W / 2, startY + 26);
-    } else {
-      rankingEntries.slice(0, 5).forEach((entry, i) => {
-        const y = startY + 26 + i * 18;
-        let displayName = String(entry.name || "?");
-        if (displayName.length > 12) displayName = displayName.slice(0, 12) + "…";
-        const line = `${i + 1}. ${displayName} — ${entry.score}`;
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "#000";
-        ctx.fillStyle = "#fff";
-        ctx.strokeText(line, W / 2, y);
-        ctx.fillText(line, W / 2, y);
-      });
-    }
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = "#fff";
+    lines.forEach((line, i) => {
+      const y = startY + 26 + i * 18;
+      ctx.strokeText(line, W / 2, y);
+      ctx.fillText(line, W / 2, y);
+    });
     ctx.restore();
   }
 
