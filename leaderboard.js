@@ -46,16 +46,16 @@ if (configured) {
 const Leaderboard = {
   enabled: !!db,
 
-  async submitScore(deviceId, name, score) {
+  async submitScore(name, score) {
     if (!db) return false;
     const cleanName = String(name).trim().slice(0, MAX_NAME_LEN);
     const cleanScore = Math.max(0, Math.min(MAX_SCORE, Math.round(score)));
-    const cleanId = String(deviceId || "").slice(0, 64) || slugify(cleanName);
     if (!cleanName || cleanScore <= 0) return false;
     try {
-      // Keyed by a stable per-device id (not the name) so renaming updates
-      // the same entry instead of creating a duplicate in the ranking.
-      const ref = doc(db, "scores", cleanId);
+      // Keyed by the (slugified) name itself: localStorage-based device ids
+      // aren't reliable on iOS home-screen apps, so re-typing the same name
+      // is what actually keeps someone's entry stable across sessions there.
+      const ref = doc(db, "scores", slugify(cleanName));
       const snap = await getDoc(ref);
       if (snap.exists() && snap.data().score >= cleanScore) return false;
       await setDoc(ref, {
