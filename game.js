@@ -376,6 +376,7 @@
     "Bellostas",
     "Eloy",
     "Nico",
+    "Acher",
   ];
   const friends = FRIEND_NAMES.map((name) => {
     const img = new Image();
