@@ -148,17 +148,17 @@
       ctx.strokeStyle = "#000";
       ctx.fillStyle = "#fff";
       const msg = rankingLoading ? "Cargando..." : "¡Sé el primero!";
-      ctx.strokeText(msg, W / 2, startY + 20);
-      ctx.fillText(msg, W / 2, startY + 20);
+      ctx.strokeText(msg, W / 2, startY + 26);
+      ctx.fillText(msg, W / 2, startY + 26);
     } else {
       rankingEntries.slice(0, 5).forEach((entry, i) => {
-        const y = startY + 20 + i * 18;
+        const y = startY + 26 + i * 18;
         let displayName = String(entry.name || "?");
         if (displayName.length > 12) displayName = displayName.slice(0, 12) + "…";
         const line = `${i + 1}. ${displayName} — ${entry.score}`;
         ctx.lineWidth = 3;
         ctx.strokeStyle = "#000";
-        ctx.fillStyle = i === 0 ? LIME : "#fff";
+        ctx.fillStyle = "#fff";
         ctx.strokeText(line, W / 2, y);
         ctx.fillText(line, W / 2, y);
       });
@@ -1320,7 +1320,7 @@
     ctx.fillText("TOCA O PULSA ESPACIO PARA VOLAR", W / 2, H * 0.62);
     ctx.restore();
 
-    drawRankingBlock(H * 0.68);
+    drawRankingBlock(H * 0.66);
 
     if (best > 0) {
       ctx.save();
@@ -1375,7 +1375,7 @@
     ctx.fillText("Toca para volver a intentarlo", W / 2, H * 0.58);
     ctx.restore();
 
-    drawRankingBlock(H * 0.68);
+    drawRankingBlock(H * 0.63);
   }
 
   // ---------- Update ----------
