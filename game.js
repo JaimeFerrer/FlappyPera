@@ -1473,7 +1473,7 @@
     ctx.fillText("TOCA O PULSA ESPACIO PARA VOLAR", W / 2, H * 0.62);
     ctx.restore();
 
-    drawRankingButton(H * 0.66);
+    drawRankingButton(H * 0.79);
 
     if (best > 0) {
       ctx.save();
