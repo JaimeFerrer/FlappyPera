@@ -89,8 +89,11 @@
   };
 
   // ---------- State ----------
-  const STATE = { READY: "ready", PLAYING: "playing", DEAD: "dead" };
+  const STATE = { READY: "ready", PLAYING: "playing", DEAD: "dead", RANKING: "ranking" };
   let state = STATE.READY;
+  let rankingReturnState = STATE.READY;
+  let readyRankingButtonRect = null;
+  let deadRankingCardRect = null;
 
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
   let score = 0;
@@ -101,7 +104,7 @@
   function refreshRanking() {
     if (!window.Leaderboard || !window.Leaderboard.enabled) return;
     rankingLoading = true;
-    window.Leaderboard.getTop(5)
+    window.Leaderboard.getTop(10)
       .then((list) => {
         rankingEntries = list;
         rankingLoading = false;
@@ -131,8 +134,13 @@
     });
   }
 
-  function drawRankingBlock(startY) {
-    if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+  // Tappable preview card shown on the game-over screen: top 5 + a hint that
+  // taps through to the full top-10 ranking screen.
+  function drawRankingPreview(startY) {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) {
+      deadRankingCardRect = null;
+      return;
+    }
 
     const rows = rankingEntries.length === 0 ? 1 : Math.min(5, rankingEntries.length);
     const lines = [];
@@ -145,19 +153,24 @@
         lines.push(`${i + 1}. ${displayName} — ${entry.score}`);
       });
     }
+    const hint = "Toca para ver el Top 10 ▸";
 
     // Dark translucent card behind the block so it stands out from the busy background.
     ctx.save();
     ctx.font = "600 13px 'Anton', sans-serif";
     let maxTextW = ctx.measureText("🏆 RANKING").width;
     for (const line of lines) maxTextW = Math.max(maxTextW, ctx.measureText(line).width);
+    ctx.font = "500 11px 'Anton', sans-serif";
+    maxTextW = Math.max(maxTextW, ctx.measureText(hint).width);
     const boxW = Math.min(W - 40, maxTextW + 44);
     const boxTop = startY - 22;
-    const boxH = 26 + 18 * (rows - 1) + 46;
+    const boxH = 26 + 18 * (rows - 1) + 64;
+    const boxX = W / 2 - boxW / 2;
     ctx.fillStyle = "rgba(5,7,10,0.62)";
-    roundRectPath(W / 2 - boxW / 2, boxTop, boxW, boxH, 12);
+    roundRectPath(boxX, boxTop, boxW, boxH, 12);
     ctx.fill();
     ctx.restore();
+    deadRankingCardRect = { x: boxX, y: boxTop, w: boxW, h: boxH };
 
     ctx.save();
     ctx.textAlign = "center";
@@ -177,7 +190,107 @@
       ctx.strokeText(line, W / 2, y);
       ctx.fillText(line, W / 2, y);
     });
+
+    const hintY = startY + 26 + (rows - 1) * 18 + 22;
+    ctx.font = "500 11px 'Anton', sans-serif";
+    ctx.lineWidth = 2.5;
+    const pulse = 0.55 + 0.45 * Math.sin(elapsed * 4);
+    ctx.globalAlpha = pulse;
+    ctx.strokeText(hint, W / 2, hintY);
+    ctx.fillStyle = LIME;
+    ctx.fillText(hint, W / 2, hintY);
     ctx.restore();
+  }
+
+  // Small pill button shown on the ready screen, taps through to the full ranking screen.
+  function drawRankingButton(centerY) {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) {
+      readyRankingButtonRect = null;
+      return;
+    }
+    const label = "🏆 VER RANKING";
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "700 16px 'Anton', sans-serif";
+    const textW = ctx.measureText(label).width;
+    const boxW = textW + 46;
+    const boxH = 38;
+    const boxX = W / 2 - boxW / 2;
+    const boxY = centerY - boxH / 2;
+    ctx.fillStyle = "rgba(5,7,10,0.75)";
+    ctx.strokeStyle = LIME;
+    ctx.lineWidth = 2.5;
+    roundRectPath(boxX, boxY, boxW, boxH, boxH / 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = LIME;
+    ctx.fillText(label, W / 2, centerY + 1);
+    ctx.restore();
+
+    readyRankingButtonRect = { x: boxX, y: boxY, w: boxW, h: boxH };
+  }
+
+  // Full-screen top-10 ranking, reached from the ready button or the game-over preview.
+  function drawRankingScreen() {
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.78)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "700 32px 'Bangers', 'Anton', sans-serif";
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = LIME;
+    ctx.strokeText("🏆 RANKING", W / 2, H * 0.16);
+    ctx.fillText("🏆 RANKING", W / 2, H * 0.16);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "600 19px 'Anton', sans-serif";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = "#fff";
+    const listTop = H * 0.27;
+    const lineH = 33;
+    if (rankingEntries.length === 0) {
+      const msg = rankingLoading ? "Cargando..." : "¡Sé el primero en apuntarte!";
+      ctx.strokeText(msg, W / 2, listTop);
+      ctx.fillText(msg, W / 2, listTop);
+    } else {
+      rankingEntries.slice(0, 10).forEach((entry, i) => {
+        const y = listTop + i * lineH;
+        let displayName = String(entry.name || "?");
+        if (displayName.length > 16) displayName = displayName.slice(0, 16) + "…";
+        const line = `${i + 1}. ${displayName} — ${entry.score}`;
+        ctx.strokeText(line, W / 2, y);
+        ctx.fillText(line, W / 2, y);
+      });
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "500 16px sans-serif";
+    ctx.fillStyle = "#cfcfcf";
+    const pulse = 0.6 + 0.4 * Math.sin(elapsed * 4);
+    ctx.globalAlpha = pulse;
+    ctx.fillText("Toca para volver", W / 2, H * 0.92);
+    ctx.restore();
+  }
+
+  function pointInRect(x, y, r) {
+    return !!r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  function openRanking(returnState) {
+    rankingReturnState = returnState;
+    state = STATE.RANKING;
+    refreshRanking();
   }
 
   const pear = {
@@ -923,9 +1036,35 @@
   }
 
   // ---------- Input ----------
+  function getLogicalCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * W,
+      y: ((e.clientY - rect.top) / rect.height) * H,
+    };
+  }
+
   function onInput(e) {
     if (e) e.preventDefault();
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+
+    if (state === STATE.RANKING) {
+      state = rankingReturnState;
+      return;
+    }
+
+    if (e && e.clientX !== undefined) {
+      const { x, y } = getLogicalCoords(e);
+      if (state === STATE.READY && pointInRect(x, y, readyRankingButtonRect)) {
+        openRanking(STATE.READY);
+        return;
+      }
+      if (state === STATE.DEAD && pointInRect(x, y, deadRankingCardRect)) {
+        openRanking(STATE.DEAD);
+        return;
+      }
+    }
+
     flap();
   }
   canvas.addEventListener("pointerdown", onInput);
@@ -1334,7 +1473,7 @@
     ctx.fillText("TOCA O PULSA ESPACIO PARA VOLAR", W / 2, H * 0.62);
     ctx.restore();
 
-    drawRankingBlock(H * 0.66);
+    drawRankingButton(H * 0.66);
 
     if (best > 0) {
       ctx.save();
@@ -1389,7 +1528,7 @@
     ctx.fillText("Toca para volver a intentarlo", W / 2, H * 0.58);
     ctx.restore();
 
-    drawRankingBlock(H * 0.63);
+    drawRankingPreview(H * 0.63);
   }
 
   // ---------- Update ----------
@@ -1484,6 +1623,8 @@
     } else if (state === STATE.DEAD) {
       drawScore();
       drawGameOver();
+    } else if (state === STATE.RANKING) {
+      drawRankingScreen();
     }
 
     requestAnimationFrame(loop);
