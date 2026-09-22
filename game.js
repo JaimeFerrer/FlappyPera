@@ -22,6 +22,7 @@
   const PEAR_RADIUS_RATIO = 0.045;
 
   const BEST_KEY = "flappypera_best_score";
+  const NAME_KEY = "flappypera_player_name";
 
   // ---------- Canvas setup ----------
   const canvas = document.getElementById("game");
@@ -93,6 +94,77 @@
 
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
   let score = 0;
+
+  // ---------- Ranking global (Firebase) ----------
+  let rankingEntries = [];
+  let rankingLoading = false;
+  function refreshRanking() {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+    rankingLoading = true;
+    window.Leaderboard.getTop(5)
+      .then((list) => {
+        rankingEntries = list;
+        rankingLoading = false;
+      })
+      .catch(() => {
+        rankingLoading = false;
+      });
+  }
+  window.addEventListener("leaderboard-ready", refreshRanking);
+  refreshRanking();
+
+  function ensurePlayerNameAndSubmit(finalScore) {
+    if (finalScore <= 0) return;
+    if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+    let name = localStorage.getItem(NAME_KEY);
+    if (name === null) {
+      name = window.prompt(
+        "¡Apúntate al ranking! ¿Cómo te llamas? (déjalo en blanco para no participar)",
+        ""
+      );
+      name = (name || "").trim().slice(0, 16);
+      localStorage.setItem(NAME_KEY, name);
+    }
+    if (!name) return;
+    window.Leaderboard.submitScore(name, finalScore).then((changed) => {
+      if (changed) refreshRanking();
+    });
+  }
+
+  function drawRankingBlock(startY) {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "700 15px 'Anton', sans-serif";
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = "#000";
+    ctx.fillStyle = LIME;
+    ctx.strokeText("🏆 RANKING", W / 2, startY);
+    ctx.fillText("🏆 RANKING", W / 2, startY);
+
+    ctx.font = "600 13px 'Anton', sans-serif";
+    if (rankingEntries.length === 0) {
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#000";
+      ctx.fillStyle = "#fff";
+      const msg = rankingLoading ? "Cargando..." : "¡Sé el primero!";
+      ctx.strokeText(msg, W / 2, startY + 20);
+      ctx.fillText(msg, W / 2, startY + 20);
+    } else {
+      rankingEntries.slice(0, 5).forEach((entry, i) => {
+        const y = startY + 20 + i * 18;
+        let displayName = String(entry.name || "?");
+        if (displayName.length > 12) displayName = displayName.slice(0, 12) + "…";
+        const line = `${i + 1}. ${displayName} — ${entry.score}`;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#000";
+        ctx.fillStyle = i === 0 ? LIME : "#fff";
+        ctx.strokeText(line, W / 2, y);
+        ctx.fillText(line, W / 2, y);
+      });
+    }
+    ctx.restore();
+  }
 
   const pear = {
     x: W * 0.28,
@@ -1248,6 +1320,8 @@
     ctx.fillText("TOCA O PULSA ESPACIO PARA VOLAR", W / 2, H * 0.62);
     ctx.restore();
 
+    drawRankingBlock(H * 0.68);
+
     if (best > 0) {
       ctx.save();
       ctx.font = "700 17px 'Anton', sans-serif";
@@ -1300,6 +1374,8 @@
     ctx.globalAlpha = pulse;
     ctx.fillText("Toca para volver a intentarlo", W / 2, H * 0.58);
     ctx.restore();
+
+    drawRankingBlock(H * 0.68);
   }
 
   // ---------- Update ----------
@@ -1360,6 +1436,7 @@
         best = score;
         localStorage.setItem(BEST_KEY, String(best));
       }
+      ensurePlayerNameAndSubmit(score);
     }
   }
 
