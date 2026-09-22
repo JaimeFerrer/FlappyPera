@@ -94,6 +94,7 @@
   let rankingReturnState = STATE.READY;
   let readyRankingButtonRect = null;
   let deadRankingCardRect = null;
+  let rankingRegisterBtnRect = null;
 
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
   let score = 0;
@@ -130,6 +131,24 @@
     }
     if (!name) return;
     window.Leaderboard.submitScore(name, finalScore).then((changed) => {
+      if (changed) refreshRanking();
+    });
+  }
+
+  // Manual opt-in for people who skipped the name prompt the first time, or
+  // whose local best was set before the ranking existed.
+  function registerBestScore() {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+    if (best <= 0) return;
+    const existingName = localStorage.getItem(NAME_KEY) || "";
+    const answer = window.prompt(
+      `Vas a apuntar tu mejor puntuación (${best}) al ranking. ¿Cómo te llamas?`,
+      existingName
+    );
+    const cleanName = (answer || "").trim().slice(0, 16);
+    if (!cleanName) return;
+    localStorage.setItem(NAME_KEY, cleanName);
+    window.Leaderboard.submitScore(cleanName, best).then((changed) => {
       if (changed) refreshRanking();
     });
   }
@@ -202,18 +221,13 @@
     ctx.restore();
   }
 
-  // Small pill button shown on the ready screen, taps through to the full ranking screen.
-  function drawRankingButton(centerY) {
-    if (!window.Leaderboard || !window.Leaderboard.enabled) {
-      readyRankingButtonRect = null;
-      return;
-    }
-    const label = "🏆 VER RANKING";
+  // Reusable rounded pill button (lime outline, dark translucent fill). Returns its hit rect.
+  function drawPillButton(label, centerY) {
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "700 16px 'Anton', sans-serif";
     const textW = ctx.measureText(label).width;
-    const boxW = textW + 46;
+    const boxW = Math.min(W - 40, textW + 46);
     const boxH = 38;
     const boxX = W / 2 - boxW / 2;
     const boxY = centerY - boxH / 2;
@@ -229,7 +243,16 @@
     ctx.fillText(label, W / 2, centerY + 1);
     ctx.restore();
 
-    readyRankingButtonRect = { x: boxX, y: boxY, w: boxW, h: boxH };
+    return { x: boxX, y: boxY, w: boxW, h: boxH };
+  }
+
+  // Small pill button shown on the ready screen, taps through to the full ranking screen.
+  function drawRankingButton(centerY) {
+    if (!window.Leaderboard || !window.Leaderboard.enabled) {
+      readyRankingButtonRect = null;
+      return;
+    }
+    readyRankingButtonRect = drawPillButton("🏆 VER RANKING", centerY);
   }
 
   // Full-screen top-10 ranking, reached from the ready button or the game-over preview.
@@ -273,13 +296,25 @@
     }
     ctx.restore();
 
+    if (best > 0) {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "600 13px 'Anton', sans-serif";
+      ctx.fillStyle = "#cfcfcf";
+      ctx.fillText(`¿No apareces? Tu mejor puntuación es ${best}`, W / 2, H * 0.8);
+      ctx.restore();
+      rankingRegisterBtnRect = drawPillButton("📋 APUNTAR MI MEJOR", H * 0.855);
+    } else {
+      rankingRegisterBtnRect = null;
+    }
+
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "500 16px sans-serif";
     ctx.fillStyle = "#cfcfcf";
     const pulse = 0.6 + 0.4 * Math.sin(elapsed * 4);
     ctx.globalAlpha = pulse;
-    ctx.fillText("Toca para volver", W / 2, H * 0.92);
+    ctx.fillText("Toca para volver", W / 2, H * 0.94);
     ctx.restore();
   }
 
@@ -1049,6 +1084,13 @@
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
 
     if (state === STATE.RANKING) {
+      if (e && e.clientX !== undefined) {
+        const { x, y } = getLogicalCoords(e);
+        if (pointInRect(x, y, rankingRegisterBtnRect)) {
+          registerBestScore();
+          return;
+        }
+      }
       state = rankingReturnState;
       return;
     }
