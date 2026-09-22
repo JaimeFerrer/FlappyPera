@@ -5,10 +5,10 @@
 // Sustituye los valores de abajo por los de tu proyecto de Firebase:
 // Firebase console -> ⚙️ Configuración del proyecto -> Tus apps -> app web -> "Config"
 window.FIREBASE_CONFIG = {
-  apiKey: "REEMPLAZA_ESTO",
-  authDomain: "REEMPLAZA_ESTO",
-  projectId: "REEMPLAZA_ESTO",
-  storageBucket: "REEMPLAZA_ESTO",
-  messagingSenderId: "REEMPLAZA_ESTO",
-  appId: "REEMPLAZA_ESTO",
+  apiKey: "AIzaSyDZSxrkC-daJUTxdxSF1tHoQjcOBCDPx8k",
+  authDomain: "flappy-pera.firebaseapp.com",
+  projectId: "flappy-pera",
+  storageBucket: "flappy-pera.firebasestorage.app",
+  messagingSenderId: "5134239918",
+  appId: "1:5134239918:web:e8ab2a221e36377d3e853f",
 };
