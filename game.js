@@ -23,6 +23,34 @@
 
   const BEST_KEY = "flappypera_best_score";
   const NAME_KEY = "flappypera_player_name";
+  const DEVICE_ID_KEY = "flappypera_device_id";
+
+  function slugifyLocal(s) {
+    return String(s)
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+  }
+
+  // Stable per-device id for the ranking: keeps updating the same entry even
+  // if the player later edits their display name (avoids duplicate rows).
+  function getDeviceId() {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (id) return id;
+    const existingName = localStorage.getItem(NAME_KEY);
+    id = (existingName && slugifyLocal(existingName)) || "";
+    if (!id) {
+      id =
+        window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : `p-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    localStorage.setItem(DEVICE_ID_KEY, id);
+    return id;
+  }
 
   // ---------- Canvas setup ----------
   const canvas = document.getElementById("game");
@@ -120,6 +148,7 @@
   function ensurePlayerNameAndSubmit(finalScore) {
     if (finalScore <= 0) return;
     if (!window.Leaderboard || !window.Leaderboard.enabled) return;
+    const deviceId = getDeviceId();
     let name = localStorage.getItem(NAME_KEY);
     if (name === null) {
       name = window.prompt(
@@ -130,7 +159,7 @@
       localStorage.setItem(NAME_KEY, name);
     }
     if (!name) return;
-    window.Leaderboard.submitScore(name, finalScore).then((changed) => {
+    window.Leaderboard.submitScore(deviceId, name, finalScore).then((changed) => {
       if (changed) refreshRanking();
     });
   }
@@ -140,6 +169,7 @@
   function registerBestScore() {
     if (!window.Leaderboard || !window.Leaderboard.enabled) return;
     if (best <= 0) return;
+    const deviceId = getDeviceId();
     const existingName = localStorage.getItem(NAME_KEY) || "";
     const answer = window.prompt(
       `Vas a apuntar tu mejor puntuación (${best}) al ranking. ¿Cómo te llamas?`,
@@ -148,7 +178,7 @@
     const cleanName = (answer || "").trim().slice(0, 16);
     if (!cleanName) return;
     localStorage.setItem(NAME_KEY, cleanName);
-    window.Leaderboard.submitScore(cleanName, best).then((changed) => {
+    window.Leaderboard.submitScore(deviceId, cleanName, best).then((changed) => {
       if (changed) refreshRanking();
     });
   }
