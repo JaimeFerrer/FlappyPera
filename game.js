@@ -1482,7 +1482,7 @@
       ctx.lineWidth = 4;
       ctx.strokeStyle = "#000";
       ctx.strokeText(`Mejor puntuación: ${best}`, W / 2, H * 0.87);
-      ctx.fillStyle = LIME;
+      ctx.fillStyle = "#fff";
       ctx.fillText(`Mejor puntuación: ${best}`, W / 2, H * 0.87);
       ctx.restore();
     }
