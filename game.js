@@ -378,6 +378,15 @@
     "Nico",
     "Acher",
     "Deva",
+    "Ruth",
+    "Dani",
+    "Paola",
+    "Targui",
+    "HermanaNico",
+    "Burri",
+    "Pelao",
+    "Marques",
+    "Maria",
   ];
   // Most friends are a tight head crop anchored by its bottom edge at the
   // neck. Deva's photo keeps the whole arm+bottle next to her face, so it
