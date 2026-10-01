@@ -399,8 +399,8 @@
     Ruth: { widthScale: 1, neckRatio: 0.95, centerXFrac: 0.5 },
     // Their face crops include more hair/space around the face than most,
     // which made the face itself read smaller than everyone else's.
-    Targui: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.43 },
-    Maria: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.55 },
+    Targui: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.49 },
+    Maria: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.47 },
     Paola: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.5 },
   };
   const friends = FRIEND_NAMES.map((name) => {
