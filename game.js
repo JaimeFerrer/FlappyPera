@@ -377,7 +377,15 @@
     "Eloy",
     "Nico",
     "Acher",
+    "Deva",
   ];
+  // Most friends are a tight head crop anchored by its bottom edge at the
+  // neck. Deva's photo keeps the whole arm+bottle next to her face, so it
+  // needs a wider draw size and a custom neck anchor point instead of the
+  // image's bottom edge.
+  const FRIEND_OVERRIDES = {
+    Deva: { widthScale: 1.7, neckRatio: 0.66, centerXFrac: 0.33, hideArm: "right" },
+  };
   const friends = FRIEND_NAMES.map((name) => {
     const img = new Image();
     const friend = { name, img, loaded: false, aspect: 0.7 };
@@ -693,6 +701,7 @@
     alpha = Math.max(0, Math.min(1, alpha));
     if (alpha <= 0) return;
 
+    const ov = FRIEND_OVERRIDES[slot.friend.name];
     const HW = 40 * slot.scale;
     const headH = HW / slot.friend.aspect;
     const bodyW = HW * 1.1;
@@ -756,26 +765,41 @@
       x: rightShoulder.x + armLen * Math.sin(rightArmAngle),
       y: rightShoulder.y + armLen * Math.cos(rightArmAngle),
     };
+    const hideLeftArm = ov && ov.hideArm === "left";
+    const hideRightArm = ov && ov.hideArm === "right";
     if (slot.longSleeve) {
       const leftElbow = lerpPoint(leftShoulder.x, leftShoulder.y, leftHand.x, leftHand.y, 0.5);
       const rightElbow = lerpPoint(rightShoulder.x, rightShoulder.y, rightHand.x, rightHand.y, 0.5);
-      drawLimb(leftShoulder.x, leftShoulder.y, leftElbow.x, leftElbow.y, armW, slot.shirtColor);
-      drawLimb(leftElbow.x, leftElbow.y, leftHand.x, leftHand.y, armW * 0.88, SKIN_COLOR);
-      drawLimb(rightShoulder.x, rightShoulder.y, rightElbow.x, rightElbow.y, armW, slot.shirtColor);
-      drawLimb(rightElbow.x, rightElbow.y, rightHand.x, rightHand.y, armW * 0.88, SKIN_COLOR);
+      if (!hideLeftArm) {
+        drawLimb(leftShoulder.x, leftShoulder.y, leftElbow.x, leftElbow.y, armW, slot.shirtColor);
+        drawLimb(leftElbow.x, leftElbow.y, leftHand.x, leftHand.y, armW * 0.88, SKIN_COLOR);
+      }
+      if (!hideRightArm) {
+        drawLimb(rightShoulder.x, rightShoulder.y, rightElbow.x, rightElbow.y, armW, slot.shirtColor);
+        drawLimb(rightElbow.x, rightElbow.y, rightHand.x, rightHand.y, armW * 0.88, SKIN_COLOR);
+      }
     } else {
-      drawLimb(leftShoulder.x, leftShoulder.y, leftHand.x, leftHand.y, armW, SKIN_COLOR);
-      drawLimb(rightShoulder.x, rightShoulder.y, rightHand.x, rightHand.y, armW, SKIN_COLOR);
+      if (!hideLeftArm) drawLimb(leftShoulder.x, leftShoulder.y, leftHand.x, leftHand.y, armW, SKIN_COLOR);
+      if (!hideRightArm) drawLimb(rightShoulder.x, rightShoulder.y, rightHand.x, rightHand.y, armW, SKIN_COLOR);
     }
-    drawBlob(leftHand.x, leftHand.y, armW * 0.62, SKIN_SHADOW);
-    drawBlob(rightHand.x, rightHand.y, armW * 0.62, SKIN_SHADOW);
+    if (!hideLeftArm) drawBlob(leftHand.x, leftHand.y, armW * 0.62, SKIN_SHADOW);
+    if (!hideRightArm) drawBlob(rightHand.x, rightHand.y, armW * 0.62, SKIN_SHADOW);
 
     // neck, so the head doesn't float above the shirt collar
     drawBlock(-HW * 0.16, -HW * 0.1, HW * 0.32, HW * 0.25, HW * 0.08, SKIN_COLOR);
 
-    // head
+    // head (or, for a friend with an override, a wider image with its own
+    // neck anchor point instead of being cropped tight to just the face)
     const headBob = isDance ? Math.sin(t * 2) * HW * 0.06 : Math.sin(t * 1.6) * HW * 0.03;
-    ctx.drawImage(slot.friend.img, -HW / 2, -headH + headBob, HW, headH);
+    if (ov) {
+      const drawW = HW * ov.widthScale;
+      const drawH = drawW / slot.friend.aspect;
+      const centerX = (0.5 - ov.centerXFrac) * drawW;
+      const neckY = drawH * ov.neckRatio;
+      ctx.drawImage(slot.friend.img, -drawW / 2 + centerX, -neckY + headBob, drawW, drawH);
+    } else {
+      ctx.drawImage(slot.friend.img, -HW / 2, -headH + headBob, HW, headH);
+    }
 
     ctx.restore();
   }
