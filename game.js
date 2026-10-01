@@ -397,6 +397,11 @@
     // Her photo keeps the cup balanced on her head above her face, so the
     // neck anchor sits near the bottom of her chin instead of the image edge.
     Ruth: { widthScale: 1, neckRatio: 0.95, centerXFrac: 0.5 },
+    // Their face crops include more hair/space around the face than most,
+    // which made the face itself read smaller than everyone else's.
+    Targui: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.5 },
+    Maria: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.5 },
+    Paola: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.5 },
   };
   const friends = FRIEND_NAMES.map((name) => {
     const img = new Image();
