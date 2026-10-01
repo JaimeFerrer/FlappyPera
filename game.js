@@ -401,7 +401,7 @@
     // which made the face itself read smaller than everyone else's.
     Targui: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.55 },
     Maria: { widthScale: 1.2, neckRatio: 1, centerXFrac: 0.4 },
-    Paola: { widthScale: 1.35, neckRatio: 1, centerXFrac: 0.5 },
+    Paola: { widthScale: 1.6, neckRatio: 1, centerXFrac: 0.53 },
   };
   const friends = FRIEND_NAMES.map((name) => {
     const img = new Image();
