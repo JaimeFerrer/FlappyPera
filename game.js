@@ -394,6 +394,9 @@
   // image's bottom edge.
   const FRIEND_OVERRIDES = {
     Deva: { widthScale: 1.7, neckRatio: 0.66, centerXFrac: 0.33, hideArm: "right" },
+    // Her photo keeps the cup balanced on her head above her face, so the
+    // neck anchor sits near the bottom of her chin instead of the image edge.
+    Ruth: { widthScale: 1, neckRatio: 0.95, centerXFrac: 0.5 },
   };
   const friends = FRIEND_NAMES.map((name) => {
     const img = new Image();
